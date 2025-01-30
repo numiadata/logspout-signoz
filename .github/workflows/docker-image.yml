@@ -41,8 +41,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/logspout-signoz:latest
-            ${{ secrets.DOCKER_USERNAME }}/logspout-signoz:${{ env.DATE }}-${{ env.GIT_SHA }}
+            ghcr.io/marcmacmac/logspout-signoz:latest
 
       - name: Verify Docker image
         run: docker images ${{ secrets.DOCKER_USERNAME }}/my-app
