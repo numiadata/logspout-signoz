@@ -14,7 +14,7 @@ SigNoz, then you can use this adapter to send logs to SigNoz.
 1. Direct post to signoz http endpoint. So this adapter can send more detailed logs.
 1. Auto detect service name, so no special configuration needed.
    1. For JSON logs, picks name from JSON service field.
-   1. Otherwise pick service name from docker-compose service name.
+   1. Otherwise pick service name from docker-compose or docker-swarm service name.
    1. Otherwise use docker image name as service name
 1. Auto detect env name, so no special configuration needed
    1. For JSON logs, picks name from JSON env field.
