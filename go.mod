@@ -33,3 +33,5 @@ require (
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a // indirect
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 )
+
+replace github.com/pavanputhra/logspout-signoz => github.com/marcmacmac/logspout-signoz v0.0.0
