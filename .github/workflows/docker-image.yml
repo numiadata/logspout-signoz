@@ -33,6 +33,12 @@ jobs:
       - name: Get current date
         run: echo "DATE=$(date +'%Y.%m.%d')" >> $GITHUB_ENV
 
+      - name: Clear Go module cache
+        run: |
+          go clean -modcache
+          rm -rf go.sum
+          go mod tidy  
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -40,8 +46,6 @@ jobs:
           file: ./custom/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          no-cache: true
           tags: |
             ghcr.io/marcmacmac/logspout-signoz:latest
-
-      - name: Verify Docker image
-        run: docker images ${{ secrets.DOCKER_USERNAME }}/my-app
