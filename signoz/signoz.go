@@ -134,11 +134,11 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 		level := "info"
 		leverNumber := logLevelMap[strings.ToUpper(level)]
 
-		serviceName := message.Container.Config.Hostname
+		serviceName := message.Container.Config.Image
 		if serviceNameFromLabel, exists := message.Container.Config.Labels["com.docker.compose.service"]; exists {
     			serviceName = serviceNameFromLabel
 		}
-		if swarmTaskName, exists := message.Container.Name; exists {
+		if swarmTaskName, exists := message.Container.Labels["com.docker.swarm.task.name"]; exists {
     			serviceName = swarmTaskName
 		}
 		logMessage = LogMessage{
