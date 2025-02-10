@@ -1,5 +1,5 @@
 package main
 
 import (
-	_ "github.com/marcmacmac/logspout-signoz/signoz"
+	_ "github.com/numiadata/logspout-signoz/signoz"
 )

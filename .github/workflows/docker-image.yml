@@ -37,7 +37,7 @@ jobs:
         run: |
           go clean -modcache
           rm -rf go.sum
-          go mod tidy  
+          go mod tidy
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -48,4 +48,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           no-cache: true
           tags: |
-            ghcr.io/marcmacmac/logspout-signoz:latest
+            ghcr.io/numiadata/logspout-signoz:latest
