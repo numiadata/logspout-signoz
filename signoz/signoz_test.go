@@ -58,7 +58,9 @@ func TestNewSignozAdapter(t *testing.T) {
 	route := &router.Route{} // Mock route
 
 	os.Setenv("ENV", "test")
+	os.Setenv("HOST_NAME", "test-host")
 	defer os.Unsetenv("ENV")
+	defer os.Unsetenv("HOST_NAME")
 
 	adapterLog, err := NewSignozAdapter(route)
 	adapter := adapterLog.(*Adapter)
@@ -68,6 +70,9 @@ func TestNewSignozAdapter(t *testing.T) {
 
 	if adapter.env != "test" {
 		t.Errorf("NewSignozAdapter() env = %v; want test", adapter.env)
+	}
+	if adapter.hostName != "test-host" {
+		t.Errorf("NewSignozAdapter() hostName = %v; want test-host", adapter.hostName)
 	}
 	if !adapter.autoParseJson {
 		t.Errorf("NewSignozAdapter() autoParseJson = %v; want true", adapter.autoParseJson)
@@ -163,7 +168,28 @@ func TestStream(t *testing.T) {
 		Time: time.Now(),
 	}
 
+	// Test with Docker Swarm labels
+	swarmMessage := &router.Message{
+		Container: &docker.Container{
+			ID:   "abc123def456",
+			Name: "/p-5_my-service.1.task123abc",
+			Config: &docker.Config{
+				Image: "serviceImage",
+				Labels: map[string]string{
+					"com.docker.swarm.service.name": "p-5_my-service",
+					"com.docker.swarm.task.id":      "task123abc",
+					"com.docker.swarm.task.name":    "p-5_my-service.1.task123abc",
+					"com.docker.swarm.node.id":      "node456def",
+					"com.docker.stack.namespace":    "p-5",
+				},
+			},
+		},
+		Data: `{"level": "info", "message": "Swarm service log"}`,
+		Time: time.Now(),
+	}
+
 	// Send a valid JSON log message
+	logStream <- swarmMessage
 	logStream <- jsonWithoutTime
 	logStream <- jsonWithoutLabel
 	logStream <- jsonWithLabel

@@ -75,11 +75,15 @@ func NewSignozAdapter(route *router.Route) (router.LogAdapter, error) {
 	if !exists {
 		envValue = ""
 	}
+
+	hostName, _ := os.LookupEnv("HOST_NAME")
+
 	return &Adapter{
 		route:                   route,
 		autoParseJson:           autoParseJson,
 		autoLogLevelStringMatch: autoLogLevelStringMatch,
 		env:                     envValue,
+		hostName:                hostName,
 	}, nil
 }
 
@@ -90,6 +94,7 @@ type Adapter struct {
 	autoParseJson           bool
 	autoLogLevelStringMatch bool
 	env                     string
+	hostName                string
 }
 
 type LogMessage struct {
@@ -141,6 +146,45 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 		if swarmTaskName, exists := message.Container.Config.Labels["com.docker.swarm.service.name"]; exists {
 			serviceName = swarmTaskName
 		}
+
+		resources := map[string]string{
+			"service.name": serviceName,
+		}
+
+		// Add container ID for identification
+		if message.Container.ID != "" {
+			// Use short container ID (first 12 chars) like docker does
+			shortID := message.Container.ID
+			if len(shortID) > 12 {
+				shortID = shortID[:12]
+			}
+			resources["container.id"] = shortID
+		}
+
+		// Add container name
+		if message.Container.Name != "" {
+			resources["container.name"] = strings.TrimPrefix(message.Container.Name, "/")
+		}
+
+		// Add Docker Swarm metadata for replica identification
+		if taskID, exists := message.Container.Config.Labels["com.docker.swarm.task.id"]; exists {
+			resources["swarm.task.id"] = taskID
+		}
+		if taskName, exists := message.Container.Config.Labels["com.docker.swarm.task.name"]; exists {
+			resources["swarm.task.name"] = taskName
+		}
+		if nodeID, exists := message.Container.Config.Labels["com.docker.swarm.node.id"]; exists {
+			resources["swarm.node.id"] = nodeID
+		}
+		if stackNamespace, exists := message.Container.Config.Labels["com.docker.stack.namespace"]; exists {
+			resources["swarm.stack.namespace"] = stackNamespace
+		}
+
+		// Add host name from environment variable (set per logspout instance)
+		if a.hostName != "" {
+			resources["host.name"] = a.hostName
+		}
+
 		logMessage = LogMessage{
 			Timestamp: int(message.Time.Unix()),
 			//TraceID:        "0", // replace with actual data
@@ -149,10 +193,8 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			SeverityText:   level,
 			SeverityNumber: leverNumber,
 			Attributes:     map[string]string{},
-			Resources: map[string]string{
-				"service.name": serviceName,
-			},
-			Message: message.Data,
+			Resources:      resources,
+			Message:        message.Data,
 		}
 		if a.env != "" {
 			logMessage.Resources["deployment.environment"] = a.env
