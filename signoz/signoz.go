@@ -201,39 +201,38 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 		}
 
 		jsonInterface := parseJSON(message.Data)
-		if jsonInterface != nil {
-			jsonMap := jsonInterface.(map[string]interface{})
-
-			if jsonMap["timestamp"] != nil {
-				timestamp, err := time.Parse(time.RFC3339, jsonMap["timestamp"].(string))
+		// Only process if JSON is a map (object), skip arrays and other types
+		if jsonMap, ok := jsonInterface.(map[string]interface{}); ok {
+			if ts, ok := jsonMap["timestamp"].(string); ok {
+				timestamp, err := time.Parse(time.RFC3339, ts)
 				if err == nil {
 					logMessage.Timestamp = int(timestamp.Unix())
 				}
 			}
 
-			if jsonMap["level"] != nil {
-				level = jsonMap["level"].(string)
+			if lvl, ok := jsonMap["level"].(string); ok {
+				level = lvl
 				leverNumber := logLevelMap[strings.ToUpper(level)]
 				logMessage.SeverityText = level
 				logMessage.SeverityNumber = leverNumber
 			}
 
-			if jsonMap["message"] != nil {
-				logMessage.Message = jsonMap["message"].(string)
+			if msg, ok := jsonMap["message"].(string); ok {
+				logMessage.Message = msg
 			}
 
-			if jsonMap["env"] != nil {
-				logMessage.Resources["deployment.environment"] = jsonMap["env"].(string)
+			if env, ok := jsonMap["env"].(string); ok {
+				logMessage.Resources["deployment.environment"] = env
 			}
-			if jsonMap["environment"] != nil {
-				logMessage.Resources["deployment.environment"] = jsonMap["environment"].(string)
+			if env, ok := jsonMap["environment"].(string); ok {
+				logMessage.Resources["deployment.environment"] = env
 			}
 
-			if jsonMap["service"] != nil {
-				logMessage.Resources["service.name"] = jsonMap["service"].(string)
+			if svc, ok := jsonMap["service"].(string); ok {
+				logMessage.Resources["service.name"] = svc
 			}
-			if jsonMap["namespace"] != nil {
-				logMessage.Resources["namespace"] = jsonMap["namespace"].(string)
+			if ns, ok := jsonMap["namespace"].(string); ok {
+				logMessage.Resources["namespace"] = ns
 			}
 			// Get loop through non standard keys and save them as attributes inside logMessage
 			for key, value := range jsonMap {
@@ -241,7 +240,7 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 					logMessage.Attributes[key] = fmt.Sprintf("%v", value)
 				}
 			}
-		} else {
+		} else if jsonInterface == nil {
 			if a.autoLogLevelStringMatch {
 				for level, number := range logLevelMap {
 					if strings.Contains(message.Data, level) {
